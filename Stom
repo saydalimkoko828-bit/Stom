@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyDentalClinic</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#007aff">
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+      background:#f5f5f7; 
+      margin:0; 
+      padding:16px;
+    }
+    h1 { text-align:center; margin-bottom:24px; color:#333; }
+    
+    /* Навигация */
+    .nav { 
+      display: flex; 
+      gap:8px; 
+      margin-bottom:20px; 
+      flex-wrap: wrap;
+    }
+    .nav button {
+      flex:1;
+      min-width:120px;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#e5e5ea;
+      color:#333;
+      font-size:14px;
+      cursor:pointer;
+      transition: all 0.3s;
+    }
+    .nav button.active {
+      background:#007aff;
+      color:white;
+    }
+    
+    /* Карточки */
+    .card { 
+      background:#fff; 
+      border-radius:16px; 
+      padding:20px; 
+      margin-bottom:16px; 
+      box-shadow:0 4px 10px rgba(0,0,0,0.08);
+    }
+    
+    /* Формы */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap:12px;
+      margin-bottom:16px;
+    }
+    input, select { 
+      width:100%; 
+      padding:12px; 
+      margin:4px 0; 
+      border-radius:10px; 
+      border:1px solid #ccc; 
+      font-size:14px;
+    }
+    button { 
+      padding:12px 24px; 
+      border:none; 
+      border-radius:12px; 
+      background:#007aff; 
+      color:#fff; 
+      font-size:16px; 
+      cursor:pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background:#0056cc;
+    }
+    button.secondary {
+      background:#e5e5ea;
+      color:#333;
+    }
+    button.danger {
+      background:#ff3b30;
+      color:white;
+    }
+    
+    /* Пациенты */
+    .patient { 
+      border-bottom:1px solid #eee; 
+      padding:12px 0; 
+      display:flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .patient-info { flex:1; }
+    .patient-actions { display:flex; gap:8px; }
+    .patient-name { 
+      font-weight:600; 
+      font-size:16px; 
+      margin-bottom:4px;
+      color:#333;
+    }
+    .patient-meta { 
+      font-size:14px; 
+      color:#666; 
+      margin-bottom:4px;
+    }
+    .patient-payment {
+      font-weight:500;
+      margin-top:8px;
+      padding:6px 12px;
+      background:#f8f8fa;
+      border-radius:8px;
+      display:inline-block;
+    }
+    .paid { color:#34c759; }
+    .debt { color:#ff9500; }
+    
+    /* Календарь */
+    .calendar-header {
+      display:flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom:16px;
+    }
+    .calendar-nav {
+      display:flex;
+      gap:12px;
+      align-items: center;
+    }
+    .calendar-grid {
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:4px;
+      margin-bottom:16px;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      display:flex;
+      align-items: center;
+      justify-content: center;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:14px;
+      position:relative;
+    }
+    .calendar-day:hover {
+      background:#f0f0f5;
+    }
+    .calendar-day.today {
+      background:#007aff;
+      color:white;
+    }
+    .calendar-day.has-appointments::after {
+      content:"";
+      position:absolute;
+      bottom:4px;
+      width:6px;
+      height:6px;
+      background:#ff3b30;
+      border-radius:50%;
+    }
+    .calendar-day.selected {
+      background:#007aff20;
+      border:2px solid #007aff;
+    }
+    
+    /* Врачи */
+    .doctor-tag {
+      display:inline-block;
+      padding:4px 12px;
+      background:#34c75920;
+      color:#34c759;
+      border-radius:12px;
+      font-size:12px;
+      margin:2px;
+    }
+    
+    /* Секции */
+    .section {
+      display:none;
+      animation: fadeIn 0.3s;
+    }
+    .section.active {
+      display:block;
+    }
+    
+    /* Модальное окно */
+    .modal {
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.5);
+      z-index:1000;
+      align-items:center;
+      justify-content:center;
+    }
+    .modal-content {
+      background:white;
+      border-radius:20px;
+      padding:24px;
+      width:90%;
+      max-width:500px;
+      max-height:80vh;
+      overflow-y:auto;
+    }
+    .modal-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+    
+    /* Статистика */
+    .stats-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap:12px;
+      margin-top:16px;
+    }
+    .stat-card {
+      background:#f8f8fa;
+      padding:16px;
+      border-radius:12px;
+      text-align:center;
+    }
+    .stat-value {
+      font-size:24px;
+      font-weight:600;
+      margin:8px 0;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(10px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<h1>🦷 MyDentalClinic</h1>
+
+<!-- Навигация -->
+<div class="nav">
+  <button data-section="calendar" onclick="showSection('calendar', event)" class="active">📅 Календарь</button>
+  <button data-section="patients" onclick="showSection('patients', event)">👥 Пациенты</button>
+  <button data-section="doctors" onclick="showSection('doctors', event)">👨‍⚕️ Врачи</button>
+  <button data-section="finance" onclick="showSection('finance', event)">💰 Финансы</button>
+  <button data-section="add" onclick="showSection('add', event)">➕ Добавить запись</button>
+</div>
+
+<!-- Секция добавления записи -->
+<div id="add" class="section active">
+  <div class="card">
+    <h3>Добавить новую запись</h3>
+    <div class="form-grid">
+      <input id="fio" placeholder="ФИО пациента">
+      <input id="phone" placeholder="Телефон">
+      <input id="procedure" placeholder="Процедура">
+      <select id="doctor">
+        <option value="">Выберите врача</option>
+      </select>
+      <input type="date" id="date">
+      <input type="time" id="time">
+      <input id="duration" placeholder="Длительность (мин)" type="number">
+      <input id="price" placeholder="К оплате (сум)" type="number">
+      <input id="paid" placeholder="Оплачено (сум)" type="number" value="0">
+      <input id="notes" placeholder="Заметки">
+    </div>
+    <button onclick="addPatient()">Добавить запись</button>
+  </div>
+</div>
+
+<!-- Секция календаря -->
+<div id="calendar" class="section">
+  <div class="card">
+    <div class="calendar-header">
+      <h3 id="current-month">Январь 2024</h3>
+      <div class="calendar-nav">
+        <button onclick="prevMonth()" class="secondary">←</button>
+        <button onclick="todayMonth()">Сегодня</button>
+        <button onclick="nextMonth()" class="secondary">→</button>
+      </div>
+    </div>
+    <div class="calendar-grid" id="calendar-grid"></div>
+    <div id="day-appointments"></div>
+  </div>
+</div>
+
+<!-- Секция пациентов -->
+<div id="patients" class="section">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3>Пациенты</h3>
+      <input type="text" id="search-patient" placeholder="Поиск пациентов..." style="width:200px;">
+    </div>
+    <div id="patient-list"></div>
+  </div>
+</div>
+
+<!-- Секция врачей -->
+<div id="doctors" class="section">
+  <div class="card">
+    <h3>Врачи</h3>
+    <div class="form-grid">
+      <input id="doctor-name" placeholder="Имя врача">
+      <input id="doctor-specialty" placeholder="Специализация">
+      <input id="doctor-phone" placeholder="Телефон">
+    </div>
+    <button onclick="addDoctor()">Добавить врача</button>
+    <div id="doctor-list" style="margin-top:20px;"></div>
+  </div>
+</div>
+
+<!-- Секция финансов -->
+<div id="finance" class="section">
+  <div class="card">
+    <h3>Финансы</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div>Всего к оплате</div>
+        <div class="stat-value" id="total-price">0</div>
+      </div>
+      <div class="stat-card">
+        <div>Получено</div>
+        <div class="stat-value" id="total-paid">0</div>
+      </div>
+      <div class="stat-card">
+        <div>Долг</div>
+        <div class="stat-value" id="total-debt">0</div>
+      </div>
+      <div class="stat-card">
+        <div>За месяц</div>
+        <div class="stat-value" id="month-income">0</div>
+      </div>
+    </div>
+    <h4 style="margin-top:24px;">Последние платежи</h4>
+    <div id="payment-history"></div>
+  </div>
+</div>
+
+<!-- Модальное окно редактирования пациента -->
+<div id="patient-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Редактировать пациента</h3>
+      <button onclick="closeModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+    </div>
+    <div id="modal-patient-content"></div>
+  </div>
+</div>
+
+<!-- Модальное окно дня -->
+<div id="day-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-day-title"></h3>
+      <button onclick="closeDayModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+    </div>
+    <div id="modal-day-content"></div>
+  </div>
+</div>
+
+<script>
+// Инициализация данных
+let patients = JSON.parse(localStorage.getItem('patients') || '[]');
+let doctors = JSON.parse(localStorage.getItem('doctors') || '[]');
+let currentSection = 'add';
+let currentDate = new Date();
+let selectedDate = null;
+let selectedPatient = null;
+
+// Инициализация врачей по умолчанию
+if (doctors.length === 0) {
+  doctors = [
+    { id: 1, name: 'Иванов А.А.', specialty: 'Хирург', phone: '+998901234567' },
+    { id: 2, name: 'Петрова М.И.', specialty: 'Терапевт', phone: '+998907654321' }
+  ];
+  localStorage.setItem('doctors', JSON.stringify(doctors));
+}
+
+// Инициализация
+function init() {
+  renderDoctorsSelect();
+  renderPatients();
+  renderDoctors();
+  updateCalendar();
+  updateFinance();
+  // Показываем секцию по умолчанию (без reliance на глобальный event)
+  showSection('add');
+}
+
+// Навигация по секциям
+function showSection(sectionId, evt) {
+  // Удаляем active у всех кнопок
+  document.querySelectorAll('.nav button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // Ставим active либо по переданному событию, либо находим кнопку по data-section
+  if (evt && (evt.target || evt.currentTarget)) {
+    const btn = evt.currentTarget || evt.target;
+    btn.classList.add('active');
+  } else {
+    const btn = document.querySelector(`.nav button[data-section="${sectionId}"]`);
+    if (btn) btn.classList.add('active');
+  }
+
+  // Скрываем все секции
+  document.querySelectorAll('.section').forEach(section => {
+    section.classList.remove('active');
+  });
+
+  // Показываем выбранную секцию
+  const sec = document.getElementById(sectionId);
+  if (sec) sec.classList.add('active');
+  currentSection = sectionId;
+
+  // Обновляем данные в секции
+  if (sectionId === 'patients') {
+    renderPatients();
+  } else if (sectionId === 'calendar') {
+    updateCalendar();
+  } else if (sectionId === 'finance') {
+    updateFinance();
+  }
+}
+
+// Работа с пациентами
+function addPatient() {
+  const fioEl = document.getElementById('fio');
+  const phoneEl = document.getElementById('phone');
+  const procedureEl = document.getElementById('procedure');
+  const doctorSelect = document.getElementById('doctor');
+  const dateEl = document.getElementById('date');
+  const timeEl = document.getElementById('time');
+  const durationEl = document.getElementById('duration');
+  const priceEl = document.getElementById('price');
+  const paidEl = document.getElementById('paid');
+  const notesEl = document.getElementById('notes');
+
+  const doctorId = doctorSelect && doctorSelect.value ? parseInt(doctorSelect.value) : null;
+  const doctor = doctors.find(d => d.id === doctorId);
+
+  const dateVal = dateEl ? dateEl.value : '';
+  const timeVal = timeEl ? timeEl.value : '';
+
+  // Проверка на занятость времени
+  const hasConflict = patients.some(p => 
+    p.date === dateVal && 
+    p.time === timeVal &&
+    p.doctorId === doctorId
+  );
+  
+  if (hasConflict) {
+    alert('Это время уже занято у выбранного врача!');
+    return;
+  }
+
+  const patient = {
+    id: Date.now(),
+    fio: fioEl ? fioEl.value.trim() : '',
+    phone: phoneEl ? phoneEl.value.trim() : '',
+    procedure: procedureEl ? procedureEl.value.trim() : '',
+    doctorId: doctorId,
+    doctorName: doctor ? doctor.name : '',
+    date: dateVal,
+    time: timeVal,
+    duration: parseInt(durationEl ? durationEl.value : '') || 60,
+    price: Number(priceEl ? priceEl.value : '') || 0,
+    paid: Number(paidEl ? paidEl.value : '') || 0,
+    notes: notesEl ? notesEl.value.trim() : '',
+    createdAt: new Date().toISOString()
+  };
+  
+  patients.push(patient);
+  localStorage.setItem('patients', JSON.stringify(patients));
+  
+  // Очистка формы
+  ['fio', 'phone', 'procedure', 'duration', 'price', 'paid', 'notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  if (dateEl) dateEl.value = '';
+  if (timeEl) timeEl.value = '';
+  
+  // Показываем уведомление
+  alert('Пациент успешно добавлен!');
+  
+  // Обновляем все разделы
+  renderPatients();
+  updateCalendar();
+  updateFinance();
+}
+
+function renderPatients() {
+  const searchTerm = (document.getElementById('search-patient')?.value || '').toLowerCase();
+  const filteredPatients = patients.filter(p => 
+    (p.fio || '').toLowerCase().includes(searchTerm) ||
+    (p.phone || '').includes(searchTerm)
+  );
+  
+  const container = document.getElementById('patient-list');
+  if (!container) return;
+  
+  if (filteredPatients.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#666;">Пациентов пока нет</p>';
+    return;
+  }
+  
+  let html = '';
+  filteredPatients.forEach(patient => {
+    const debt = patient.price - patient.paid;
+    html += `
+      <div class="patient">
+        <div class="patient-info">
+          <div class="patient-name">${patient.fio}</div>
+          <div class="patient-meta">📞 ${patient.phone} | 👨‍⚕️ ${patient.doctorName || 'Не указан'}</div>
+          <div class="patient-meta">📅 ${patient.date} ${patient.time} | ⏰ ${patient.duration} мин</div>
+          <div class="patient-meta">${patient.procedure}</div>
+          <div class="patient-payment ${debt > 0 ? 'debt' : 'paid'}">
+            💰 Оплата: ${patient.paid} / ${patient.price} сум
+            ${debt > 0 ? ` (Долг: ${debt})` : ''}
+          </div>
+          ${patient.notes ? `<div class="patient-meta">📝 ${patient.notes}</div>` : ''}
+        </div>
+        <div class="patient-actions">
+          <button onclick="editPatientPayment(${patient.id})" class="secondary" style="padding:8px 12px;">💰</button>
+          <button onclick="editPatient(${patient.id})" class="secondary" style="padding:8px 12px;">✏️</button>
+          <button onclick="deletePatient(${patient.id})" class="danger" style="padding:8px 12px;">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function editPatientPayment(patientId) {
+  const patient = patients.find(p => p.id === patientId);
+  if (!patient) return;
+  
+  const newPaid = prompt(`Текущий платеж: ${patient.paid} сум\nОбщая сумма: ${patient.price} сум\nВведите новую сумму оплаты:`, patient.paid);
+  if (newPaid !== null) {
+    const paidAmount = Number(newPaid);
+    if (!isNaN(paidAmount)) {
+      patient.paid = paidAmount;
+      localStorage.setItem('patients', JSON.stringify(patients));
+      renderPatients();
+      updateFinance();
+      alert('Платеж обновлен!');
+    }
+  }
+}
+
+function editPatient(patientId) {
+  selectedPatient = patients.find(p => p.id === patientId);
+  if (!selectedPatient) return;
+  
+  const modal = document.getElementById('patient-modal');
+  const content = document.getElementById('modal-patient-content');
+  
+  content.innerHTML = `
+    <div class="form-grid">
+      <input id="edit-fio" value="${selectedPatient.fio}" placeholder="ФИО пациента">
+      <input id="edit-phone" value="${selectedPatient.phone}" placeholder="Телефон">
+      <input id="edit-procedure" value="${selectedPatient.procedure}" placeholder="Процедура">
+      <select id="edit-doctor">
+        <option value="">Выберите врача</option>
+        ${doctors.map(d => `<option value="${d.id}" ${d.id === selectedPatient.doctorId ? 'selected' : ''}>${d.name} - ${d.specialty}</option>`).join('')}
+      </select>
+      <input type="date" id="edit-date" value="${selectedPatient.date}">
+      <input type="time" id="edit-time" value="${selectedPatient.time}">
+      <input id="edit-duration" value="${selectedPatient.duration}" placeholder="Длительность (мин)" type="number">
+      <input id="edit-price" value="${selectedPatient.price}" placeholder="К оплате (сум)" type="number">
+      <input id="edit-paid" value="${selectedPatient.paid}" placeholder="Оплачено (сум)" type="number">
+      <input id="edit-notes" value="${selectedPatient.notes || ''}" placeholder="Заметки">
+    </div>
+    <div style="display:flex; gap:12px; margin-top:20px;">
+      <button onclick="savePatientChanges()">Сохранить</button>
+      <button onclick="closeModal()" class="secondary">Отмена</button>
+    </div>
+  `;
+  
+  modal.style.display = 'flex';
+}
+
+function savePatientChanges() {
+  if (!selectedPatient) return;
+  
+  const doctorSelect = document.getElementById('edit-doctor');
+  const doctorId = doctorSelect && doctorSelect.value ? parseInt(doctorSelect.value) : null;
+  const doctor = doctors.find(d => d.id === doctorId);
+  
+  // Проверка на конфликт (исключая текущего пациента)
+  const hasConflict = patients.some(p => 
+    p.id !== selectedPatient.id &&
+    p.date === document.getElementById('edit-date').value && 
+    p.time === document.getElementById('edit-time').value &&
+    p.doctorId === doctorId
+  );
+  
+  if (hasConflict) {
+    alert('Это время уже занято у выбранного врача!');
+    return;
+  }
+  
+  selectedPatient.fio = document.getElementById('edit-fio').value.trim();
+  selectedPatient.phone = document.getElementById('edit-phone').value.trim();
+  selectedPatient.procedure = document.getElementById('edit-procedure').value.trim();
+  selectedPatient.doctorId = doctorId;
+  selectedPatient.doctorName = doctor ? doctor.name : '';
+  selectedPatient.date = document.getElementById('edit-date').value;
+  selectedPatient.time = document.getElementById('edit-time').value;
+  selectedPatient.duration = parseInt(document.getElementById('edit-duration').value) || 60;
+  selectedPatient.price = Number(document.getElementById('edit-price').value) || 0;
+  selectedPatient.paid = Number(document.getElementById('edit-paid').value) || 0;
+  selectedPatient.notes = document.getElementById('edit-notes').value.trim();
+  
+  localStorage.setItem('patients', JSON.stringify(patients));
+  closeModal();
+  renderPatients();
+  updateCalendar();
+  updateFinance();
+  alert('Изменения сохранены!');
+}
+
+function deletePatient(patientId) {
+  if (confirm('Вы уверены, что хотите удалить этого пациента?')) {
+    patients = patients.filter(p => p.id !== patientId);
+    localStorage.setItem('patients', JSON.stringify(patients));
+    renderPatients();
+    updateCalendar();
+    updateFinance();
+  }
+}
+
+// Работа с врачами
+function renderDoctorsSelect() {
+  const select = document.getElementById('doctor');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="">Выберите врача</option>' +
+    doctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
+}
+
+function renderDoctors() {
+  const container = document.getElementById('doctor-list');
+  if (!container) return;
+  
+  if (doctors.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#666;">Врачей пока нет</p>';
+    return;
+  }
+  
+  let html = '';
+  doctors.forEach(doctor => {
+    const doctorPatients = patients.filter(p => p.doctorId === doctor.id);
+    html += `
+      <div class="patient">
+        <div class="patient-info">
+          <div class="patient-name">${doctor.name}</div>
+          <div class="patient-meta">${doctor.specialty} | 📞 ${doctor.phone}</div>
+          <div class="patient-meta">Пациентов: ${doctorPatients.length}</div>
+        </div>
+        <div class="patient-actions">
+          <button onclick="deleteDoctor(${doctor.id})" class="danger" style="padding:8px 12px;">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function addDoctor() {
+  const name = document.getElementById('doctor-name').value.trim();
+  const specialty = document.getElementById('doctor-specialty').value.trim();
+  const phone = document.getElementById('doctor-phone').value.trim();
+  
+  if (!name || !specialty || !phone) {
+    alert('Заполните все поля!');
+    return;
+  }
+  
+  const doctor = {
+    id: Date.now(),
+    name,
+    specialty,
+    phone
+  };
+  
+  doctors.push(doctor);
+  localStorage.setItem('doctors', JSON.stringify(doctors));
+  
+  // Очистка формы
+  ['doctor-name', 'doctor-specialty', 'doctor-phone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  
+  renderDoctorsSelect();
+  renderDoctors();
+  alert('Врач добавлен!');
+}
+
+function deleteDoctor(doctorId) {
+  // Проверка, есть ли пациенты у врача
+  const hasPatients = patients.some(p => p.doctorId === doctorId);
+  
+  if (hasPatients) {
+    alert('Нельзя удалить врача, у которого есть пациенты!');
+    return;
+  }
+  
+  if (confirm('Вы уверены, что хотите удалить этого врача?')) {
+    doctors = doctors.filter(d => d.id !== doctorId);
+    localStorage.setItem('doctors', JSON.stringify(doctors));
+    renderDoctorsSelect();
+    renderDoctors();
+  }
+}
+
+// Календарь
+function updateCalendar() {
+  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
+                     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  
+  const currentMonthEl = document.getElementById('current-month');
+  if (currentMonthEl) {
+    currentMonthEl.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+  }
+  
+  const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const firstDayOfWeek = firstDay.getDay();
+  
+  let calendarHTML = '';
+  
+  // Дни недели
+  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  weekDays.forEach(day => {
+    calendarHTML += `<div style="text-align:center; padding:8px; color:#666; font-weight:500;">${day}</div>`;
+  });
+  
+  // Пустые ячейки перед первым днем
+  for (let i = 0; i < (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1); i++) {
+    calendarHTML += `<div class="calendar-day"></div>`;
+  }
+  
+  // Дни месяца
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const isToday = dayDate.getTime() === today.getTime();
+    const hasAppointments = patients.some(p => p.date === dateStr);
+    const isSelected = selectedDate === dateStr;
+    
+    let className = 'calendar-day';
+    if (isToday) className += ' today';
+    if (hasAppointments) className += ' has-appointments';
+    if (isSelected) className += ' selected';
+    
+    calendarHTML += `
+      <div class="${className}" onclick="showDayAppointments('${dateStr}')">
+        ${day}
+      </div>
+    `;
+  }
+  
+  const grid = document.getElementById('calendar-grid');
+  if (grid) grid.innerHTML = calendarHTML;
+  updateDayAppointments();
+}
+
+function prevMonth() {
+  currentDate.setMonth(currentDate.getMonth() - 1);
+  updateCalendar();
+}
+
+function nextMonth() {
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  updateCalendar();
+}
+
+function todayMonth() {
+  currentDate = new Date();
+  updateCalendar();
+}
+
+function showDayAppointments(dateStr) {
+  selectedDate = dateStr;
+  updateCalendar();
+  
+  const modal = document.getElementById('day-modal');
+  const title = document.getElementById('modal-day-title');
+  const content = document.getElementById('modal-day-content');
+  
+  const dateObj = new Date(dateStr);
+  const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                     'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  
+  if (title) title.textContent = `${dateObj.getDate()} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}, ${dayNames[dateObj.getDay()]}`;
+  
+  const dayPatients = patients.filter(p => p.date === dateStr);
+  
+  if (!content) return;
+  
+  if (dayPatients.length === 0) {
+    content.innerHTML = '<p style="text-align:center; color:#666;">На этот день записей нет</p>';
+  } else {
+    let html = '<div style="display:flex; flex-direction:column; gap:12px;">';
+    
+    // Группировка по времени
+    dayPatients.sort((a, b) => a.time.localeCompare(b.time));
+    
+    dayPatients.forEach(patient => {
+      const debt = patient.price - patient.paid;
+      html += `
+        <div class="patient">
+          <div class="patient-info">
+            <div class="patient-name">${patient.fio}</div>
+            <div class="patient-meta">⏰ ${patient.time} | ${patient.duration} мин | 👨‍⚕️ ${patient.doctorName}</div>
+            <div class="patient-meta">${patient.procedure}</div>
+            <div class="patient-payment ${debt > 0 ? 'debt' : 'paid'}">
+              💰 ${patient.paid}/${patient.price} сум
+            </div>
+          </div>
+          <div class="patient-actions">
+            <button onclick="editPatient(${patient.id})" class="secondary" style="padding:8px 12px;">✏️</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    content.innerHTML = html;
+  }
+  
+  if (modal) modal.style.display = 'flex';
+}
+
+function updateDayAppointments() {
+  if (!selectedDate) return;
+  
+  const container = document.getElementById('day-appointments');
+  if (!container) return;
+  
+  const dayPatients = patients.filter(p => p.date === selectedDate);
+  
+  if (dayPatients.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">На выбранный день записей нет</p>';
+    return;
+  }
+  
+  let html = '<h4 style="margin-top:20px;">Записи на этот день:</h4>';
+  
+  dayPatients.sort((a, b) => a.time.localeCompare(b.time));
+  
+  dayPatients.forEach(patient => {
+    const debt = patient.price - patient.paid;
+    html += `
+      <div class="patient">
+        <div class="patient-info">
+          <div class="patient-name">${patient.fio}</div>
+          <div class="patient-meta">⏰ ${patient.time} | ${patient.duration} мин | 👨‍⚕️ ${patient.doctorName}</div>
+          <div class="patient-payment ${debt > 0 ? 'debt' : 'paid'}">
+            💰 ${patient.paid}/${patient.price} сум
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+// Финансы
+function updateFinance() {
+  const totalPrice = patients.reduce((sum, p) => sum + p.price, 0);
+  const totalPaid = patients.reduce((sum, p) => sum + p.paid, 0);
+  const totalDebt = totalPrice - totalPaid;
+  
+  // Доход за текущий месяц
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthIncome = patients
+    .filter(p => (p.date || '').startsWith(currentMonth))
+    .reduce((sum, p) => sum + p.paid, 0);
+  
+  const totalPriceEl = document.getElementById('total-price');
+  const totalPaidEl = document.getElementById('total-paid');
+  const totalDebtEl = document.getElementById('total-debt');
+  const monthIncomeEl = document.getElementById('month-income');
+
+  if (totalPriceEl) totalPriceEl.textContent = `${totalPrice} сум`;
+  if (totalPaidEl) totalPaidEl.textContent = `${totalPaid} сум`;
+  if (totalDebtEl) totalDebtEl.textContent = `${totalDebt} сум`;
+  if (monthIncomeEl) monthIncomeEl.textContent = `${monthIncome} сум`;
+  
+  // История платежей
+  const paymentHistory = document.getElementById('payment-history');
+  if (!paymentHistory) return;
+  
+  const recentPayments = patients
+    .filter(p => p.paid > 0)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 10);
+  
+  if (recentPayments.length === 0) {
+    paymentHistory.innerHTML = '<p style="text-align:center; color:#666;">Платежей пока нет</p>';
+    return;
+  }
+  
+  let html = '';
+  recentPayments.forEach(p => {
+    html += `
+      <div class="patient">
+        <div class="patient-info">
+          <div class="patient-name">${p.fio}</div>
+          <div class="patient-meta">📅 ${p.date} | ${p.procedure}</div>
+          <div class="patient-payment paid">
+            💰 ${p.paid} сум
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  paymentHistory.innerHTML = html;
+}
+
+// Модальные окна
+function closeModal() {
+  const modal = document.getElementById('patient-modal');
+  if (modal) modal.style.display = 'none';
+  selectedPatient = null;
+}
+
+function closeDayModal() {
+  const modal = document.getElementById('day-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Поиск пациентов
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('search-patient');
+  if (searchInput) {
+    searchInput.addEventListener('input', renderPatients);
+  }
+  
+  // Устанавливаем сегодняшнюю дату по умолчанию
+  const today = new Date().toISOString().split('T')[0];
+  const dateEl = document.getElementById('date');
+  if (dateEl) dateEl.value = today;
+
+  // edit-date может не существовать до открытия модалки — проверяем
+  const editDateEl = document.getElementById('edit-date');
+  if (editDateEl) editDateEl.value = today;
+  
+  init();
+});
+
+// Обработка нажатий ESC для закрытия модальных окон
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeDayModal();
+  }
+});
+
+// Клик вне модального окна для закрытия
+window.onclick = function(event) {
+  const modals = document.querySelectorAll('.modal');
+  modals.forEach(modal => {
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>
